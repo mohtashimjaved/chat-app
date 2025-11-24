@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatgram</title>
+    <link rel="shortcut icon" href="./5962463.ico" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="body_container">
+        <div id="list_container"></div>
+        <div id="chat_container">
+            <span class="initial_chat_message">
+                Please Click User To Start Chat
+            </span>
+        </div>
+    </div>
+    <div class="logout-modal" id="logout_modal">
+        <div class="modal-content">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout</p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="cancel_logout">Cancel</button>
+                <button class="modal-btn confirm" id="confirm_logout">Logout</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module" src="./app.js"></script>
+    <script type="module" src="./database.js"></script>
+</body>
+
+</html>

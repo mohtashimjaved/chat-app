@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Chatgram</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="./5962463.ico" type="image/x-icon">
+</head>
+
+<body>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+
+    <div class="main_box signup">
+        <div class="form_image">
+            <div class="image-overlay">
+                <h2>Join Chatgram!</h2>
+                <p>Create an account to unlock amazing updates and create new friends</p>
+            </div>
+        </div>
+        <div class="form">
+            <h1>Registration</h1>
+            <p>Already have an account?
+                <a class="login_link" href="./login.html">Login</a>
+            </p>
+            <p class="modify_text animate__animated" id="modify_text"></p>
+            <div class="input_box">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Choose a username">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="input_box">
+                <label for="email">Email</label>
+                <input type="text" id="email_r" placeholder="Enter your email">
+                <i class="fa-solid fa-envelope"></i>
+            </div>
+            <div class="input_box">
+                <label for="password">Password</label>
+                <input type="password" id="password_r" placeholder="Create a strong password">
+                <i class="fa-solid fa-lock"></i>
+                <div class="password-strength"></div>
+            </div>
+            <div class="input_box">
+                <button type="submit" id="register_btn" class="btn" >Register</button>
+                <p class="social_text">Or register with</p>
+            </div>
+            <div class="social_icons">
+                <a class="icons"><i class="fa-brands fa-facebook-f"></i></a>
+                <a class="icons"><i class="fa-brands fa-google"></i></a>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.22.3/sweetalert2.min.js"
+        integrity="sha512-QQWRGUd2jW1SacSlmtR6fKH7v53vlbmpFZLTJ0+qcxHaLB+j8bs2FnSSw5R5t6rne9peaUZ4YNUImvgvV7UsIw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://kit.fontawesome.com/a7577e03bc.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./register.js" type="module"></script>
+    <script type="module" src="./database.js"></script>
+
+</body>
+
+</html>

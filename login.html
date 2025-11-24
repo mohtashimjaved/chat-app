@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Chatgram</title>
+    <link rel="shortcut icon" href="./5962463.ico" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+
+    <div class="main_box login">
+        <div class="form_image">
+            <div class="image-overlay">
+            <h2>Welcome Back!</h2>
+            <p>Sign in to access exclusive updates and messages of your friends</p>
+        </div>
+    </div>
+        <div class="form">
+            <h1>Login</h1>
+            <p>Don't have an account?
+                <a class="register_link" href="./register.html">Register</a>
+            </p>
+            <p class="modify_text animate__animated" id="modify_text"></p>
+            <div class="input_box">
+                <label for="email">Email</label>
+                <input type="text" id="email" placeholder="Enter your email">
+                <i class="fa-solid fa-envelope"></i>
+            </div>
+            <div class="input_box">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+                <i class="fa-solid fa-lock"></i>
+                <div class="password-strength"></div>
+            </div>
+            <div class="input_box">
+                <button type="submit" id="login_btn" class="btn" >Login</button>
+                <p class="social_text">Or login with</p>
+            </div>
+            <div class="social_icons">
+                <a class="icons"><i class="fa-brands fa-facebook-f"></i></a>
+                <a class="icons"><i class="fa-brands fa-google"></i></a>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.22.3/sweetalert2.min.js"
+        integrity="sha512-QQWRGUd2jW1SacSlmtR6fKH7v53vlbmpFZLTJ0+qcxHaLB+j8bs2FnSSw5R5t6rne9peaUZ4YNUImvgvV7UsIw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://kit.fontawesome.com/a7577e03bc.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./login.js" type="module"></script>
+    <script type="module" src="./database.js"></script>
+</body>
+
+</html>
