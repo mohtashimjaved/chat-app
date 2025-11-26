@@ -404,6 +404,10 @@ body {
     justify-content: center;
     min-width: 100px;
 }
+#send_btn i{
+  color: #b9bbbe;
+  font-size: 10px;
+}
 
 #send_btn:hover {
     background: var(--primary-dark);

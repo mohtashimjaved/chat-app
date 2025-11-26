@@ -60,11 +60,14 @@ const setupLogoutModal = () => {
     confirmLogout.addEventListener("click", signoutfunc)
 }
 
-const fetchData = async (table, currentEmail) => {
+const fetchData = async (table) => {
+    const getSession = await session();
+    const currentEmail = getSession.session.user.email;
     const { data, error } = await supabaseclient
         .from(table)
         .select()
         .neq('email', currentEmail)
+        console.log(currentEmail)
     if (error) {
         console.error(error.message)
         return
@@ -139,13 +142,8 @@ const updateData = async (newMessageObj, userEmail, senderEmail) => {
 
 const renderChatMessages = (chats, id) => {
     const userEmail = userObj?.userEmail;
-    // console.log(userEmail);
 
-    const userName = localStorage.getItem('userName');
-    // const container = document.getElementById("chat_container")
-
-    // const existingList = document.getElementById('message_container');
-    // if (existingList) existingList.remove();
+    // const userName = localStorage.getItem('userName');
 
     const messageList = document.getElementById("message_container")
     messageList.innerHTML = ""
@@ -210,7 +208,7 @@ const renderUser = async () => {
 
     const userContainer = document.getElementById("user_container")
 
-    const data = await fetchData('users', userEmail)
+    const data = await fetchData('users')
     if (!data) return;
 
     userContainer.innerHTML = '<h4>Active Users:</h4>';
