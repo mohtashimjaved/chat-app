@@ -29,19 +29,21 @@ const setupLogoutModal = () => {
     const cancelLogout = document.getElementById("cancel_logout");
     const confirmLogout = document.getElementById("confirm_logout");
 
+    if (!logoutBtn || !logoutModal) return;
+
     // Open logout modal
     logoutBtn.addEventListener("click", () => {
         logoutModal.style.display = "flex";
-        document.body.style.overflow = "hidden"; // Prevent background scrolling
+        document.body.style.overflow = "hidden";
     });
 
     // Close modal when cancel is clicked
     cancelLogout.addEventListener("click", () => {
         logoutModal.style.display = "none";
-        document.body.style.overflow = "auto"; // Restore scrolling
+        document.body.style.overflow = "auto";
     });
 
-    // Close modal when clicking outside the modal content
+    // Close modal when clicking outside
     logoutModal.addEventListener("click", (e) => {
         if (e.target === logoutModal) {
             logoutModal.style.display = "none";
@@ -49,7 +51,6 @@ const setupLogoutModal = () => {
         }
     });
 
-    // Close modal with Escape key
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && logoutModal.style.display === "flex") {
             logoutModal.style.display = "none";
@@ -57,7 +58,7 @@ const setupLogoutModal = () => {
         }
     });
 
-    confirmLogout.addEventListener("click", signoutfunc)
+    confirmLogout.addEventListener("click", signoutfunc);
 }
 
 const fetchData = async (table) => {
@@ -67,7 +68,7 @@ const fetchData = async (table) => {
         .from(table)
         .select()
         .neq('email', currentEmail)
-        console.log(currentEmail)
+    console.log(currentEmail)
     if (error) {
         console.error(error.message)
         return
@@ -142,50 +143,107 @@ const updateData = async (newMessageObj, userEmail, senderEmail) => {
 
 const renderChatMessages = (chats, id) => {
     const userEmail = userObj?.userEmail;
-
-    // const userName = localStorage.getItem('userName');
-
     const messageList = document.getElementById("message_container")
     messageList.innerHTML = ""
-    chats.map((chat, i) => {
+
+    chats.forEach((chat, i) => {
         const isSentByMe = chat.email === userEmail;
+        const msgId = `msg-${i}`;
+
         messageList.innerHTML += `
-        <div id=chat${i} style="text-align: ${isSentByMe ? "right" : "left"}; margin: 5px 0;"> 
-        <span style="display: inline-block; padding: 8px 12px; border-radius: 10px; background-color: ${isSentByMe ? "#c6e9f8ff" : "#E5E5EA"}; color: #000;">
-                ${chat.message}
-                </span>
+        <div class="message-wrapper ${isSentByMe ? "sent" : "received"}" id="wrapper-${i}" style="animation-delay: ${i * 0.05}s"> 
+            ${isSentByMe ? `
+            <div class="message-actions">
+                <button class="action-btn edit" id="edit-btn-${i}" title="Edit"><i class="fas fa-edit"></i></button>
+                <button class="action-btn delete" id="delete-btn-${i}" title="Delete"><i class="fas fa-trash"></i></button>
+            </div>
+            ` : ""}
+            <span id="${msgId}" class="message-bubble">
+                <span class="text-content">${chat.message}</span>
+                ${chat.isEdited ? '<span class="edited-tag">Edited</span>' : ""}
+            </span>
         </div>
-        <div id="delete${i}" style="display: none; background-color: black">delete message</div>
         `;
     })
+
     chats.forEach((chat, i) => {
-        document.getElementById(`chat${i}`).addEventListener("click", () => {
-            document.getElementById(`delete${i}`).style.display = "block"
-        })
-        document.getElementById(`delete${i}`).addEventListener("click", async () => {
-            chats.splice(i, 1)
-            const { data, error } = await supabaseclient
-                .from('chats')
-                .update({
-                    chats: chats
-                })
-                .eq('id', id)
-                .select()
+        const isSentByMe = chat.email === userEmail;
+        if (isSentByMe) {
+            // Delete functionality
+            document.getElementById(`delete-btn-${i}`).addEventListener("click", async () => {
+                if (!confirm("Are you sure you want to delete this message?")) return;
+                chats.splice(i, 1)
+                await updateChatInDB(chats, id);
+            });
 
-            if (error) {
+            // Edit functionality
+            document.getElementById(`edit-btn-${i}`).addEventListener("click", () => {
+                const messageSpan = document.getElementById(`msg-${i}`);
+                const originalText = chat.message;
 
-                console.error("Update Error:", error.message)
-                return error
-            }
+                messageSpan.innerHTML = `
+                    <input type="text" class="edit-input" id="edit-input-${i}" value="${originalText}">
+                    <div class="edit-actions">
+                        <span class="edit-save" id="save-edit-${i}">Save</span>
+                        <span class="edit-cancel" id="cancel-edit-${i}">Cancel</span>
+                    </div>
+                `;
 
-            console.log("Update Success:", data)
-            renderChatMessages(chats, id)
-            return data
-        })
+                const input = document.getElementById(`edit-input-${i}`);
+                input.focus();
+
+                // Save on Enter
+                input.addEventListener("keypress", (e) => {
+                    if (e.key === "Enter") {
+                        document.getElementById(`save-edit-${i}`).click();
+                    }
+                });
+
+                // Cancel on Escape
+                input.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape") {
+                        document.getElementById(`cancel-edit-${i}`).click();
+                    }
+                });
+
+                document.getElementById(`save-edit-${i}`).addEventListener("click", async () => {
+                    const newText = input.value.trim();
+                    if (newText && newText !== originalText) {
+                        chats[i].message = newText;
+                        chats[i].isEdited = true;
+                        await updateChatInDB(chats, id);
+                    } else {
+                        renderChatMessages(chats, id);
+                    }
+                });
+
+                document.getElementById(`cancel-edit-${i}`).addEventListener("click", () => {
+                    renderChatMessages(chats, id);
+                });
+            });
+        }
     })
 
-
     messageList.scrollTop = messageList.scrollHeight;
+}
+
+// Helper function to update database
+const updateChatInDB = async (chats, id) => {
+    const { data, error } = await supabaseclient
+        .from('chats')
+        .update({ chats: chats })
+        .eq('id', id)
+        .select()
+
+    if (error) {
+        console.error("Update Error:", error.message)
+        alert("Failed to update message: " + error.message);
+        return error
+    }
+
+    console.log("Update Success:", data)
+    renderChatMessages(chats, id)
+    return data
 }
 
 
@@ -204,30 +262,41 @@ const renderUser = async () => {
         </div>
     
     `
-    document.getElementById("logout_btn").addEventListener("click", setupLogoutModal)
+    setupLogoutModal();
 
     const userContainer = document.getElementById("user_container")
 
     const data = await fetchData('users')
     if (!data) return;
 
-    userContainer.innerHTML = '<h4>Active Users:</h4>';
+    userContainer.innerHTML = `
+        <div class="current-user-profile">
+            <h4 class="sidebar-label">My Profile</h4>
+            <div class="user-item current-user">
+                <i class="fas fa-user-circle profile-icon"></i>
+                <span class="user-name">${userObj.userName} (You)</span>
+            </div>
+        </div>
+        <h4 class="sidebar-label">Active Users</h4>
+    `;
 
     data.forEach((user) => {
+        if (user.email === userEmail) return; // Skip current user in the 'Active Users' list as they are shown above
+
         const displayName = user.user_name
 
         userContainer.innerHTML += `
         <div 
-            style="border: 1px solid #ccc; padding: 5px; margin-bottom: 5px; cursor: pointer;" 
-            class="user-item" 
+            class="user-item other-user" 
             data-email="${user.email}"  
             data-name="${displayName}"> 
-            ${displayName} 
+            <i class="fas fa-user user-icon"></i>
+            <span class="user-name">${displayName}</span>
         </div>
         `
     })
 
-    const userDivs = document.querySelectorAll(".user-item")
+    const userDivs = document.querySelectorAll(".user-item:not(.current-user)")
     userDivs.forEach((div) => {
         div.addEventListener("click", clickedUser)
     })
@@ -235,8 +304,11 @@ const renderUser = async () => {
 // renderUser()
 
 const clickedUser = async (event) => {
-    const senderEmail = event.target.getAttribute('data-email');
-    const senderName = event.target.getAttribute('data-name');
+    const item = event.currentTarget.closest(".user-item");
+    if (!item || item.classList.contains('current-user')) return;
+
+    const senderEmail = item.getAttribute('data-email');
+    const senderName = item.getAttribute('data-name');
 
     localStorage.setItem("senderEmail", senderEmail)
     localStorage.setItem("senderName", senderName)
@@ -256,8 +328,10 @@ const clickedUser = async (event) => {
     const inputContainer = document.getElementById("input_container");
 
     chatWith.innerHTML = `
-    <h4 style="border-bottom: 1px solid #eee; padding-bottom: 10px; ">Chatting with: <p style="text-transfrom: Capitalize; margin-left: 5px;">${senderName}
-    </p></h4>
+    <div class="header-info">
+        <span class="chat-header-title">Chatting with</span>
+        <span class="active-sender-name">${senderName}</span>
+    </div>
     `
     inputContainer.innerHTML = `
     <input type="text" id="message" placeholder="Send a message">
@@ -273,16 +347,16 @@ const clickedUser = async (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
             sendBtn.click()
-            console.log('enter');
         }
     })
+
     if (!chatData || chatData.length === 0) {
-        await insertData('[]', userEmail, senderEmail);
-        console.log("New empty chat record inserted.");
-        console.log(chatData);
-
-        renderChatMessages(chatData[0].chats, chatData[0].id);
-
+        const result = await insertData('[]', userEmail, senderEmail);
+        if (result && result.length > 0) {
+            renderChatMessages(result[0].chats, result[0].id);
+        } else {
+            console.error("Failed to create new chat record.");
+        }
     } else {
         renderChatMessages(chatData[0].chats, chatData[0].id);
     }
