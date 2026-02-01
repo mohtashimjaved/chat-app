@@ -7,6 +7,20 @@ localStorage.removeItem("senderName")
 const userObj = JSON.parse(localStorage?.getItem('userObj'))
 let cachedUsers = null;
 
+const toggleSidebar = (show = true) => {
+    const listContainer = document.getElementById("list_container");
+    const overlay = document.getElementById("sidebar_overlay");
+    if (!listContainer || !overlay) return;
+
+    if (show) {
+        listContainer.classList.remove("hidden");
+        overlay.classList.add("active");
+    } else {
+        listContainer.classList.add("hidden");
+        overlay.classList.remove("active");
+    }
+}
+
 const checkSession = async () => {
     const getSession = await session();
     if (!getSession.session) {
@@ -373,6 +387,7 @@ const renderUser = async () => {
             </div>
         `;
         setupLogoutModal();
+        document.getElementById("sidebar_overlay")?.addEventListener("click", () => toggleSidebar(false));
     }
 
     const otherUserList = document.getElementById("other_user_list");
@@ -533,23 +548,46 @@ const clickedUser = async (event) => {
     const inputContainer = document.getElementById("input_container");
 
     chatWith.innerHTML = `
+    <button class="mobile-nav-toggle" id="sidebar_toggle" title="Back to users">
+        <i class="fas fa-chevron-left"></i>
+    </button>
     <div class="header-info">
         <span class="chat-header-title">Connected with</span>
         <span class="active-sender-name">${senderName}</span>
     </div>
     `
+    // Toggle back on mobile via the button
+    document.getElementById("sidebar_toggle")?.addEventListener("click", () => toggleSidebar(true));
+
+    // Hide sidebar on mobile after clicking a user
+    if (window.innerWidth <= 768) toggleSidebar(false);
     inputContainer.innerHTML = `
-    <input type="text" id="message" placeholder="Send a message">
-    <button id="send_btn">Send Message</button>
+    <textarea id="message" placeholder="Type a message..." rows="1"></textarea>
+    <button id="send_btn" title="Send Message">
+        <i class="fas fa-paper-plane"></i>
+    </button>
     `
 
     const chatData = await fetchChats(userEmail, senderEmail);
     const sendBtn = document.getElementById("send_btn")
     const messageInput = document.getElementById('message')
 
+    // Auto-resize textarea
+    messageInput.addEventListener("input", function () {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        // Limit max height
+        if (this.scrollHeight > 150) {
+            this.style.overflowY = 'auto';
+            this.style.height = '150px';
+        } else {
+            this.style.overflowY = 'hidden';
+        }
+    });
+
     sendBtn.addEventListener("click", sendMessage)
     messageInput.addEventListener("keypress", (event) => {
-        if (event.key === "Enter") {
+        if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             sendBtn.click()
         }
@@ -598,6 +636,8 @@ const sendMessage = async () => {
         }
 
         messageInput.value = ""
+        messageInput.style.height = 'auto'; // Reset height
+        messageInput.style.overflowY = 'hidden';
         renderUser(); // Re-sort own list after sending
     }
 }

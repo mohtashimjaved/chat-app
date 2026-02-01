@@ -368,6 +368,9 @@ body {
   position: relative;
   transition: var(--transition);
   border: 1px solid var(--glass-border);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .sent .message-bubble {
@@ -494,14 +497,19 @@ body {
 
 #message {
   flex: 1;
-  height: 56px;
+  min-height: 56px;
+  max-height: 150px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--glass-border);
-  border-radius: 28px;
-  padding: 0 24px;
+  border-radius: 24px;
+  padding: 16px 24px;
   color: white;
   outline: none;
   transition: var(--transition);
+  resize: none;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  overflow-y: hidden;
 }
 
 #message:focus {
@@ -554,15 +562,26 @@ body {
 }
 
 #send_btn {
+  width: 56px;
   height: 56px;
-  padding: 0 32px;
-  border-radius: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   border: none;
-  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: var(--transition);
+}
+
+#send_btn i {
+  font-size: 1.2rem;
+  transform: translateX(2px);
+  /* text-align: center;
+  align-self: center; */
+  /* Slight adjustment to center the plane icon */
 }
 
 #send_btn:hover {
@@ -857,5 +876,267 @@ body {
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+/* --- Responsive Design & Perfection --- */
+
+.sidebar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 95;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition);
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 1024px) {
+  .body_container {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    border-radius: 0;
+    border: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .body_container {
+    flex-direction: column;
+  }
+
+  /* Sidebar absolute for mobile - Full Width */
+  #list_container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 100;
+    transform: translateX(0);
+    transition: var(--transition);
+    border-right: none;
+    background: var(--bg-deep);
+    /* Consistent background */
+  }
+
+  #list_container.hidden {
+    transform: translateX(-100%);
+  }
+
+  #chat_container {
+    width: 100%;
+    height: 100%;
+  }
+
+  #chat_with {
+    padding: 0 20px;
+    height: 70px;
+    background: rgba(10, 12, 20, 0.95);
+  }
+
+  .active-sender-name {
+    font-size: 1.15rem;
+  }
+
+  .chat-header-title {
+    font-size: 0.65rem;
+  }
+
+  #message_container {
+    padding: 24px 16px;
+    gap: 12px;
+  }
+
+  .message-wrapper {
+    max-width: 85%;
+  }
+
+  .message-bubble {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+
+  #input_container {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  #message {
+    min-height: 48px;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    border-radius: 20px;
+  }
+
+  #send_btn {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+  }
+
+  /* Auth Responsive Perfection */
+  .main_box {
+    flex-direction: column;
+    height: auto;
+    width: 92vw;
+    max-height: 92vh;
+    border-radius: var(--radius-md);
+    overflow-y: auto;
+  }
+
+  .form_image {
+    height: 180px;
+    flex: none;
+  }
+
+  .image-overlay {
+    padding: 24px;
+    background: linear-gradient(to bottom, transparent, rgba(3, 4, 8, 0.9));
+  }
+
+  .image-overlay h2 {
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+  }
+
+  .image-overlay p {
+    font-size: 0.9rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .form {
+    padding: 32px 24px;
+  }
+
+  .form h1 {
+    font-size: 1.8rem;
+    margin-bottom: 4px;
+  }
+
+  .input_box {
+    margin-bottom: 18px;
+  }
+
+  .input_box input {
+    height: 48px;
+    font-size: 0.95rem;
+  }
+
+  .input_box i {
+    top: 49px;
+    /* Adjusting for smaller input height */
+  }
+
+  .btn {
+    height: 52px;
+  }
+
+  .modal-content {
+    padding: 32px 24px;
+    width: 90%;
+    max-width: none;
+    margin: 20px;
+  }
+
+  .welcome-card {
+    padding: 32px 24px;
+    margin: 20px;
+  }
+
+  .welcome-card i {
+    font-size: 3rem;
+  }
+
+  .welcome-card h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Sidebar Toggle/Back Button (Dynamic) */
+.mobile-nav-toggle {
+  display: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mobile-nav-toggle i {
+  font-size: 1.1rem;
+}
+
+.mobile-nav-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+/* Sidebar Mobile Header */
+.sidebar-header-mobile {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.sidebar-title-mobile {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.02em;
+}
+
+.close-sidebar-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .mobile-nav-toggle {
+    display: flex;
+  }
+
+  .sidebar-header-mobile {
+    display: flex;
+  }
+}
+
+/* Landscape Mode Fixes */
+@media (max-height: 500px) and (orientation: landscape) {
+  .main_box {
+    flex-direction: row;
+    height: 90vh;
+  }
+
+  .form_image {
+    display: none;
   }
 }
