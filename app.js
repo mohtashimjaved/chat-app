@@ -151,17 +151,17 @@ const renderChatMessages = (chats, id) => {
         const msgId = `msg-${i}`;
 
         messageList.innerHTML += `
-        <div class="message-wrapper ${isSentByMe ? "sent" : "received"}" id="wrapper-${i}" style="animation-delay: ${i * 0.05}s"> 
+        <div class="message-wrapper ${isSentByMe ? "sent" : "received"}" id="wrapper-${i}"> 
             ${isSentByMe ? `
             <div class="message-actions">
                 <button class="action-btn edit" id="edit-btn-${i}" title="Edit"><i class="fas fa-edit"></i></button>
                 <button class="action-btn delete" id="delete-btn-${i}" title="Delete"><i class="fas fa-trash"></i></button>
             </div>
             ` : ""}
-            <span id="${msgId}" class="message-bubble">
-                <span class="text-content">${chat.message}</span>
+            <div class="message-bubble">
+                <span id="${msgId}" class="text-content">${chat.message}</span>
                 ${chat.isEdited ? '<span class="edited-tag">Edited</span>' : ""}
-            </span>
+            </div>
         </div>
         `;
     })
@@ -329,7 +329,7 @@ const clickedUser = async (event) => {
 
     chatWith.innerHTML = `
     <div class="header-info">
-        <span class="chat-header-title">Chatting with</span>
+        <span class="chat-header-title">Connected with</span>
         <span class="active-sender-name">${senderName}</span>
     </div>
     `
