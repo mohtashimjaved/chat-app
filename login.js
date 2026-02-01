@@ -1,4 +1,4 @@
-import {supabaseclient, session } from "./database.js";
+import { supabaseclient, session } from "./database.js";
 
 // Initialize session check
 const checkSession = async () => {
@@ -17,6 +17,20 @@ const loginBtn = document.getElementById("login_btn");
 
 
 async function login() {
+    if (email.value.trim() === "") {
+        modifyText.classList.add('error', 'shake');
+        modifyText.innerText = "Please enter your email";
+        setTimeout(() => { modifyText.classList.remove('shake'); }, 600);
+        email.focus();
+        return;
+    }
+    if (password.value === "") {
+        modifyText.classList.add('error', 'shake');
+        modifyText.innerText = "Please enter your password";
+        setTimeout(() => { modifyText.classList.remove('shake'); }, 600);
+        password.focus();
+        return;
+    }
 
     loginBtn.classList.add('loading');
     loginBtn.disabled = true;

@@ -5,6 +5,7 @@ let chatsArr;
 localStorage.removeItem("senderEmail")
 localStorage.removeItem("senderName")
 const userObj = JSON.parse(localStorage?.getItem('userObj'))
+let cachedUsers = null;
 
 const checkSession = async () => {
     const getSession = await session();
@@ -60,6 +61,36 @@ const setupLogoutModal = () => {
 
     confirmLogout.addEventListener("click", signoutfunc);
 }
+
+const showDeleteModal = (chats, index, id) => {
+    const deleteModal = document.getElementById("delete_modal");
+    const cancelDelete = document.getElementById("cancel_delete");
+    const confirmDelete = document.getElementById("confirm_delete");
+
+    deleteModal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+
+    const closeModal = () => {
+        deleteModal.style.display = "none";
+        document.body.style.overflow = "auto";
+        // Clean up listeners to avoid memory leaks/double triggers
+        confirmDelete.onclick = null;
+        cancelDelete.onclick = null;
+    };
+
+    confirmDelete.onclick = async () => {
+        chats.splice(index, 1);
+        await updateChatInDB(chats, id);
+        closeModal();
+    };
+
+    cancelDelete.onclick = closeModal;
+
+    // Close on backdrop click
+    deleteModal.onclick = (e) => {
+        if (e.target === deleteModal) closeModal();
+    };
+};
 
 const fetchData = async (table) => {
     const getSession = await session();
@@ -140,15 +171,51 @@ const updateData = async (newMessageObj, userEmail, senderEmail) => {
     return data
 }
 
+// Format time to HH:MM AM/PM
+const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Format date to Today, Yesterday, or Feb 1, 2026
+const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+
+    // Check if it's the same year
+    if (date.getFullYear() === today.getFullYear()) {
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 const renderChatMessages = (chats, id) => {
     const userEmail = userObj?.userEmail;
     const messageList = document.getElementById("message_container")
     messageList.innerHTML = ""
 
+    let lastDate = null;
+
     chats.forEach((chat, i) => {
         const isSentByMe = chat.email === userEmail;
         const msgId = `msg-${i}`;
+        const currentMsgDate = formatDate(chat.timestamp);
+
+        // Add date divider if day changed
+        if (currentMsgDate !== lastDate) {
+            messageList.innerHTML += `
+                <div class="date-divider">
+                    <span>${currentMsgDate}</span>
+                </div>
+            `;
+            lastDate = currentMsgDate;
+        }
 
         messageList.innerHTML += `
         <div class="message-wrapper ${isSentByMe ? "sent" : "received"}" id="wrapper-${i}"> 
@@ -160,7 +227,13 @@ const renderChatMessages = (chats, id) => {
             ` : ""}
             <div class="message-bubble">
                 <span id="${msgId}" class="text-content">${chat.message}</span>
+                <span class="message-time">${formatTime(chat.timestamp)}</span>
                 ${chat.isEdited ? '<span class="edited-tag">Edited</span>' : ""}
+                ${isSentByMe ? `
+                    <span class="seen-indicator ${chat.seen ? "" : "not-seen"}">
+                        ${chat.seen ? 'Seen' : 'Delivered'}
+                    </span>
+                ` : ""}
             </div>
         </div>
         `;
@@ -170,10 +243,8 @@ const renderChatMessages = (chats, id) => {
         const isSentByMe = chat.email === userEmail;
         if (isSentByMe) {
             // Delete functionality
-            document.getElementById(`delete-btn-${i}`).addEventListener("click", async () => {
-                if (!confirm("Are you sure you want to delete this message?")) return;
-                chats.splice(i, 1)
-                await updateChatInDB(chats, id);
+            document.getElementById(`delete-btn-${i}`).addEventListener("click", () => {
+                showDeleteModal(chats, i, id);
             });
 
             // Edit functionality
@@ -227,6 +298,35 @@ const renderChatMessages = (chats, id) => {
     messageList.scrollTop = messageList.scrollHeight;
 }
 
+// Mark messages from a specific user as seen
+const markMessagesAsSeen = async (userEmail, senderEmail) => {
+    const { data, error } = await supabaseclient
+        .from("chats")
+        .select()
+        .or(`and(first_person.eq.${userEmail},second_person.eq.${senderEmail}),and(first_person.eq.${senderEmail},second_person.eq.${userEmail})`);
+
+    if (error || !data || data.length === 0) return;
+
+    const chatId = data[0].id;
+    const chats = data[0].chats;
+    let modified = false;
+
+    chats.forEach(msg => {
+        if (msg.email === senderEmail && !msg.seen) {
+            msg.seen = true;
+            modified = true;
+        }
+    });
+
+    if (modified) {
+        await supabaseclient
+            .from('chats')
+            .update({ chats: chats })
+            .eq('id', chatId);
+    }
+}
+
+
 // Helper function to update database
 const updateChatInDB = async (chats, id) => {
     const { data, error } = await supabaseclient
@@ -248,58 +348,163 @@ const updateChatInDB = async (chats, id) => {
 
 
 const renderUser = async () => {
-    const userEmail = userObj?.userEmail
-    console.log(userObj, userEmail);
+    const userEmail = userObj?.userEmail;
+    const listContainer = document.getElementById("list_container");
+    if (!listContainer) return;
 
-    const listContainer = document.getElementById("list_container")
+    // 1. Initialize stable structure if missing
+    if (!listContainer.querySelector("#user_container")) {
+        listContainer.innerHTML = `
+            <div id="user_container">
+                <div class="current-user-profile">
+                    <h4 class="sidebar-label">My Profile</h4>
+                    <div class="user-item current-user">
+                        <i class="fas fa-user-circle profile-icon"></i>
+                        <span class="user-name">${userObj.userName} (You)</span>
+                    </div>
+                </div>
+                <h4 class="sidebar-label">Active Users</h4>
+                <div id="other_user_list" class="user-list-group"></div>
+            </div>
+            <div class="logout-container">
+                <button class="logout-btn" id="logout_btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        `;
+        setupLogoutModal();
+    }
 
-    listContainer.innerHTML = `
-        <div id="user_container"></div>
-        <div class="logout-container">
-            <button class="logout-btn" id="logout_btn">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
-        </div>
-    
-    `
-    setupLogoutModal();
+    const otherUserList = document.getElementById("other_user_list");
 
-    const userContainer = document.getElementById("user_container")
-
-    const data = await fetchData('users')
+    // 2. Fetch data (Cashing users for speed)
+    if (!cachedUsers) {
+        cachedUsers = await fetchData('users');
+    }
+    const data = cachedUsers;
     if (!data) return;
 
-    userContainer.innerHTML = `
-        <div class="current-user-profile">
-            <h4 class="sidebar-label">My Profile</h4>
-            <div class="user-item current-user">
-                <i class="fas fa-user-circle profile-icon"></i>
-                <span class="user-name">${userObj.userName} (You)</span>
-            </div>
-        </div>
-        <h4 class="sidebar-label">Active Users</h4>
-    `;
+    const allChats = await supabaseclient
+        .from('chats')
+        .select()
+        .or(`first_person.eq.${userEmail},second_person.eq.${userEmail}`);
 
+    const lastActivityMap = {};
+    const unreadCounts = {};
+    const lastMessageMap = {};
+
+    if (allChats.data) {
+        allChats.data.forEach(chat => {
+            const other = chat.first_person === userEmail ? chat.second_person : chat.first_person;
+
+            // Unread counts
+            const unread = chat.chats.filter(msg => msg.email !== userEmail && !msg.seen).length;
+            if (unread > 0) unreadCounts[other] = unread;
+
+            // Last activity and message
+            if (chat.chats.length > 0) {
+                const latestMsg = chat.chats[chat.chats.length - 1];
+                // Use timestamp if exists, otherwise use 1 to rank above 'no messages'
+                lastActivityMap[other] = latestMsg.timestamp || 1;
+                lastMessageMap[other] = latestMsg.message;
+            } else {
+                lastActivityMap[other] = 0;
+            }
+        });
+    }
+
+    // Sort data is no longer needed for rendering as we use flex 'order'
+    // But we keep maps for the loop
+
+    // 3. Update existing or Create new items (No-Glitch approach)
     data.forEach((user) => {
-        if (user.email === userEmail) return; // Skip current user in the 'Active Users' list as they are shown above
+        if (user.email === userEmail) return;
 
-        const displayName = user.user_name
+        const safeEmail = user.email.replace(/[@.]/g, '_');
+        let userItem = document.getElementById(`user-item-${safeEmail}`);
+        const hasUnread = unreadCounts[user.email];
+        const lastMsg = lastMessageMap[user.email] || "No messages yet";
+        const activity = lastActivityMap[user.email] || 0;
+        const timeStr = activity > 1 ? formatTime(activity) : "";
 
-        userContainer.innerHTML += `
-        <div 
-            class="user-item other-user" 
-            data-email="${user.email}"  
-            data-name="${displayName}"> 
-            <i class="fas fa-user user-icon"></i>
-            <span class="user-name">${displayName}</span>
-        </div>
-        `
-    })
+        if (!userItem) {
+            const div = document.createElement("div");
+            div.className = "user-item other-user";
+            div.id = `user-item-${safeEmail}`;
+            div.setAttribute("data-email", user.email);
+            div.setAttribute("data-name", user.user_name);
+            div.innerHTML = `
+                <i class="fas fa-user user-icon"></i>
+                <div class="user-info-text">
+                    <div class="user-name-row">
+                        <span class="user-name">${user.user_name}</span>
+                        <span class="user-last-time">${timeStr}</span>
+                    </div>
+                    <span class="last-message">${lastMsg}</span>
+                </div>
+                <div class="dot-container">
+                    ${hasUnread ? '<div class="notification-dot"></div>' : ""}
+                </div>
+            `;
+            div.addEventListener("click", clickedUser);
+            otherUserList.appendChild(div);
+            userItem = div;
+        } else {
+            // Surgical updates to avoid flicker
+            const msgSpan = userItem.querySelector(".last-message");
+            if (msgSpan.innerText !== lastMsg) msgSpan.innerText = lastMsg;
 
-    const userDivs = document.querySelectorAll(".user-item:not(.current-user)")
-    userDivs.forEach((div) => {
-        div.addEventListener("click", clickedUser)
-    })
+            const timeSpan = userItem.querySelector(".user-last-time");
+            if (timeSpan && timeSpan.innerText !== timeStr) timeSpan.innerText = timeStr;
+
+            const dotContainer = userItem.querySelector(".dot-container");
+            if (hasUnread) {
+                if (!dotContainer.querySelector(".notification-dot")) {
+                    dotContainer.innerHTML = '<div class="notification-dot"></div>';
+                }
+            } else {
+                dotContainer.innerHTML = '';
+            }
+        }
+
+        // Apply sorting via CSS 'order' (Higher timestamp = smaller negative order = top)
+        userItem.style.order = activity ? -Math.floor(activity / 1000) : 0;
+    });
+}
+
+// Granularly update unread dots without full re-render
+const updateUnreadDots = async () => {
+    const userEmail = userObj?.userEmail;
+    if (!userEmail) return;
+
+    const { data: allChats } = await supabaseclient
+        .from('chats')
+        .select()
+        .or(`first_person.eq.${userEmail},second_person.eq.${userEmail}`);
+
+    if (!allChats) return;
+
+    const unreadCounts = {};
+    allChats.forEach(chat => {
+        const other = chat.first_person === userEmail ? chat.second_person : chat.first_person;
+        const unread = chat.chats.filter(msg => msg.email !== userEmail && !msg.seen).length;
+        if (unread > 0) unreadCounts[other] = unread;
+    });
+
+    // Find all user items and update their dots
+    document.querySelectorAll('.user-item.other-user').forEach(item => {
+        const email = item.getAttribute('data-email');
+        const dotContainer = item.querySelector('.dot-container');
+        if (!dotContainer) return;
+
+        if (unreadCounts[email]) {
+            if (!dotContainer.querySelector('.notification-dot')) {
+                dotContainer.innerHTML = '<div class="notification-dot"></div>';
+            }
+        } else {
+            dotContainer.innerHTML = '';
+        }
+    });
 }
 // renderUser()
 
@@ -359,6 +564,9 @@ const clickedUser = async (event) => {
         }
     } else {
         renderChatMessages(chatData[0].chats, chatData[0].id);
+        // Mark as seen when opening
+        await markMessagesAsSeen(userEmail, senderEmail);
+        updateUnreadDots(); // Hide dot immediately but gracefully
     }
 }
 
@@ -377,7 +585,9 @@ const sendMessage = async () => {
     if (messageInput.value.trim() !== "") {
         const messageobj = {
             email: userEmail,
-            message: messageInput.value.trim()
+            message: messageInput.value.trim(),
+            seen: false,
+            timestamp: Date.now()
         }
 
         const sendFunction = await updateData(messageobj, userEmail, senderEmail)
@@ -388,12 +598,11 @@ const sendMessage = async () => {
         }
 
         messageInput.value = ""
-
+        renderUser(); // Re-sort own list after sending
     }
 }
 const setupRealtime = () => {
     const userEmail = userObj?.userEmail
-
 
     supabaseclient
         .channel('chat_updates')
@@ -404,22 +613,22 @@ const setupRealtime = () => {
                 schema: 'public',
                 table: 'chats',
             },
-            (payload) => {
-                console.log('Realtime change received!', payload);
-
+            async (payload) => {
                 const activeSenderEmail = localStorage.getItem('senderEmail');
-
-                if (activeSenderEmail) {
+                if (activeSenderEmail && payload.new) {
                     const updatedChat = payload.new;
-
                     const isRelevant =
                         (updatedChat.first_person === userEmail && updatedChat.second_person === activeSenderEmail) ||
                         (updatedChat.first_person === activeSenderEmail && updatedChat.second_person === userEmail);
 
                     if (isRelevant) {
                         renderChatMessages(updatedChat.chats, updatedChat.id);
+                        await markMessagesAsSeen(userEmail, activeSenderEmail);
                     }
                 }
+
+                // Update dots and re-sort list
+                renderUser();
             }
         )
         .subscribe();

@@ -10,10 +10,11 @@
 </head>
 
 <body>
-    <div class="floating-element"></div>
-    <div class="floating-element"></div>
-    <div class="floating-element"></div>
-    <div class="floating-element"></div>
+    <div class="bg-decoration">
+        <div class="glow-orb" id="orb-1"></div>
+        <div class="glow-orb" id="orb-2"></div>
+        <div class="glow-orb" id="orb-3"></div>
+    </div>
 
     <div class="main_box signup">
         <div class="form_image">
@@ -30,7 +31,7 @@
             <p class="modify_text animate__animated" id="modify_text"></p>
             <div class="input_box">
                 <label for="username">Username</label>
-                <input type="text" id="username" placeholder="Choose a username">
+                <input type="text" id="username" placeholder="Choose a username" maxlength="12">
                 <i class="fa-solid fa-user"></i>
             </div>
             <div class="input_box">
@@ -45,12 +46,7 @@
                 <div class="password-strength"></div>
             </div>
             <div class="input_box">
-                <button type="submit" id="register_btn" class="btn" >Register</button>
-                <p class="social_text">Or register with</p>
-            </div>
-            <div class="social_icons">
-                <a class="icons"><i class="fa-brands fa-facebook-f"></i></a>
-                <a class="icons"><i class="fa-brands fa-google"></i></a>
+                <button type="submit" id="register_btn" class="btn">Register</button>
             </div>
         </div>
     </div>

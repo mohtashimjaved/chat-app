@@ -77,9 +77,16 @@ async function register() {
 
     let value_check;
 
-    if (username_r.value === "") {
+    if (username_r.value.trim() === "") {
         modifyText.classList.add('error', 'shake');
         modifyText.innerText = "Please Enter A Valid Username";
+        setTimeout(() => { modifyText.classList.remove('shake'); }, 600);
+        username_r.focus();
+        value_check = false;
+    }
+    else if (username_r.value.trim().length > 12) {
+        modifyText.classList.add('error', 'shake');
+        modifyText.innerText = "Username must be 12 characters or less";
         setTimeout(() => { modifyText.classList.remove('shake'); }, 600);
         username_r.focus();
         value_check = false;
