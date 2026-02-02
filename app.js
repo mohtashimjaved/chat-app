@@ -36,7 +36,6 @@ const checkSession = async () => {
     localStorage.setItem("userObj", JSON.stringify(localStorageObj))
     userObj = localStorageObj;
     renderUser()
-    setupRealtime();
 }
 checkSession();
 
@@ -312,29 +311,6 @@ const renderChatMessages = (chats, id) => {
     })
 
     messageList.scrollTop = messageList.scrollHeight;
-
-    // Add click-to-select listener
-    messageList.onclick = (e) => {
-        const wrapper = e.target.closest('.message-wrapper');
-        const isActionBtn = e.target.closest('.action-btn') || e.target.closest('.edit-actions');
-
-        if (!wrapper) {
-            // Deselect when clicking empty space
-            document.querySelectorAll('.message-wrapper.selected').forEach(w => w.classList.remove('selected'));
-            return;
-        }
-
-        if (isActionBtn) return; // Don't toggle selection when clicking buttons
-
-        const isAlreadySelected = wrapper.classList.contains('selected');
-
-        // Remove selection from others
-        document.querySelectorAll('.message-wrapper.selected').forEach(w => w.classList.remove('selected'));
-
-        if (!isAlreadySelected) {
-            wrapper.classList.add('selected');
-        }
-    };
 }
 
 // Mark messages from a specific user as seen
@@ -394,20 +370,14 @@ const renderUser = async () => {
     // 1. Initialize stable structure if missing
     if (!listContainer.querySelector("#user_container")) {
         listContainer.innerHTML = `
-            <div class="sidebar-header-mobile">
-                <span class="sidebar-title-mobile">Messages</span>
-                <div class="close-sidebar-btn" id="close_sidebar">
-                    <i class="fas fa-times"></i>
+            <div id="user_container">
+                <div class="current-user-profile">
+                    <h4 class="sidebar-label">My Profile</h4>
+                    <div class="user-item current-user">
+                        <i class="fas fa-user-circle profile-icon"></i>
+                        <span class="user-name">${userObj.userName} (You)</span>
+                    </div>
                 </div>
-            </div>
-            <div class="current-user-profile">
-                <h4 class="sidebar-label">My Profile</h4>
-                <div class="user-item current-user">
-                    <i class="fas fa-user-circle profile-icon"></i>
-                    <span class="user-name">${userObj.userName} (You)</span>
-                </div>
-            </div>
-            <div id="scrollable_sidebar_content">
                 <h4 class="sidebar-label">Active Users</h4>
                 <div id="other_user_list" class="user-list-group"></div>
             </div>
@@ -419,7 +389,6 @@ const renderUser = async () => {
         `;
         setupLogoutModal();
         document.getElementById("sidebar_overlay")?.addEventListener("click", () => toggleSidebar(false));
-        document.getElementById("close_sidebar")?.addEventListener("click", () => toggleSidebar(false));
     }
 
     const otherUserList = document.getElementById("other_user_list");
@@ -667,10 +636,6 @@ const sendMessage = async () => {
             return
         }
 
-        if (sendFunction && sendFunction.length > 0) {
-            renderChatMessages(sendFunction[0].chats, sendFunction[0].id);
-        }
-
         messageInput.value = ""
         messageInput.style.height = 'auto'; // Reset height
         messageInput.style.overflowY = 'hidden';
@@ -710,6 +675,5 @@ const setupRealtime = () => {
         .subscribe();
 }
 
-setupRealtime(); // Call this immediately if userObj exists, otherwise checkSession will handle it
-if (userObj) setupRealtime();
+setupRealtime();
 
