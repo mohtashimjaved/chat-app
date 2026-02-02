@@ -396,6 +396,9 @@ const renderUser = async () => {
         listContainer.innerHTML = `
             <div class="sidebar-header-mobile">
                 <span class="sidebar-title-mobile">Messages</span>
+                <div class="close-sidebar-btn" id="close_sidebar">
+                    <i class="fas fa-times"></i>
+                </div>
             </div>
             <div class="current-user-profile">
                 <h4 class="sidebar-label">My Profile</h4>
@@ -416,6 +419,7 @@ const renderUser = async () => {
         `;
         setupLogoutModal();
         document.getElementById("sidebar_overlay")?.addEventListener("click", () => toggleSidebar(false));
+        document.getElementById("close_sidebar")?.addEventListener("click", () => toggleSidebar(false));
     }
 
     const otherUserList = document.getElementById("other_user_list");
