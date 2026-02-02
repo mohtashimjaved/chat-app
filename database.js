@@ -15,8 +15,8 @@ export const signoutfunc = async () => {
         console.error(error);
         return error
     }
+    localStorage.removeItem("userObj")
     window.location.reload()
-
 }
 export const deletedata = async (id) => {
     const { data, error } = await supabaseclient
