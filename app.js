@@ -636,9 +636,18 @@ const sendMessage = async () => {
             return
         }
 
+        // Optimistic / Immediate Update
+        if (sendFunction && sendFunction.length > 0) {
+            renderChatMessages(sendFunction[0].chats, sendFunction[0].id);
+        }
+
         messageInput.value = ""
         messageInput.style.height = 'auto'; // Reset height
         messageInput.style.overflowY = 'hidden';
+
+        // Focus back on input for better UX
+        messageInput.focus();
+
         renderUser(); // Re-sort own list after sending
     }
 }
