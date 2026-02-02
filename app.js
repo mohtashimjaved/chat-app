@@ -276,7 +276,15 @@ const renderChatMessages = (chats, id) => {
                 `;
 
                 const input = document.getElementById(`edit-input-${i}`);
-                input.focus();
+
+                // Mobile Edit Mode Fix
+                document.body.classList.add('editing-mode');
+
+                // Wait for keyboard to likely pop up, then scroll into view
+                setTimeout(() => {
+                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    input.focus();
+                }, 300);
 
                 // Save on Enter
                 input.addEventListener("keypress", (e) => {
@@ -284,6 +292,11 @@ const renderChatMessages = (chats, id) => {
                         document.getElementById(`save-edit-${i}`).click();
                     }
                 });
+
+                // cleanup function
+                const cleanupEditMode = () => {
+                    document.body.classList.remove('editing-mode');
+                };
 
                 // Cancel on Escape
                 input.addEventListener("keydown", (e) => {
@@ -293,6 +306,7 @@ const renderChatMessages = (chats, id) => {
                 });
 
                 document.getElementById(`save-edit-${i}`).addEventListener("click", async () => {
+                    cleanupEditMode();
                     const newText = input.value.trim();
                     if (newText && newText !== originalText) {
                         chats[i].message = newText;
@@ -304,6 +318,7 @@ const renderChatMessages = (chats, id) => {
                 });
 
                 document.getElementById(`cancel-edit-${i}`).addEventListener("click", () => {
+                    cleanupEditMode();
                     renderChatMessages(chats, id);
                 });
             });
